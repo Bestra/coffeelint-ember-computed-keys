@@ -2,10 +2,11 @@ _ = require 'underscore'
 { nodeType, propMatches } = require './util'
 
 propString = (node) -> node.base.value.replace(/['"]/g,"")
+
 isGet = (node) ->
   nodeType(node) == "Call" and
   node.variable.this == true and
-  propMatches(node, "get")
+  propMatches(node, 0, "get")
 
 class ComputedProperty
   rootNode: null
