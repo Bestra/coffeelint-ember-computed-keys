@@ -10,13 +10,13 @@ class ComputedKeys
     meta: ''
 
   lintAST : (rootAstNode, @astApi) ->
+    @cpList = []
     @lintNode rootAstNode
+    @createErrors()
     undefined
 
-  lintNode: (node) ->
-    cp = FindsComputedProperties.createPropertyFromNode(node)
-
-    if cp
+  createErrors: ->
+    @cpList.forEach (cp) =>
       cp.extraKeys.forEach (k) =>
         error = @astApi.createError
           context: "#{k.key} is not used in the CP body"
@@ -31,6 +31,11 @@ class ComputedKeys
           lineNumber: k.lineNumber
           meta: "needsKey"
         @errors.push error
+
+  lintNode: (node) ->
+    cp = FindsComputedProperties.computedPropertyFromNode(node)
+
+    @cpList.push cp if cp
 
     node.eachChild (childNode) =>
       @lintNode(childNode) if childNode

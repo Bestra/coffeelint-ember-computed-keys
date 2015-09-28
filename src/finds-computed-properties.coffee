@@ -1,14 +1,22 @@
 ComputedProperty = require './computed-property'
-{ nodeType, matchesString } = require './util'
+{ nodeType, propMatches, matchesString } = require './util'
 
-isComputed = (node) ->
-  matchesString(node, "Ember.computed") || matchesString(node, "Em.computed")
+isPropertyExtension = (node) ->
+  nodeType(node) == "Call" and
+  propMatches(node, 0, "property")
 
-createPropertyFromNode = (node) ->
+isEmberComputed = (node) ->
+  matchesString(node, "Ember.computed") or
+  matchesString(node, "Em.computed")
+
+computedPropertyFromNode = (node) ->
   if node.context == "object" and
-  nodeType(node) == "Assign" and
-  isComputed(node.value)
+  nodeType(node) == "Assign"
+    propName = node.variable.base.value
 
-    new ComputedProperty(node.variable.base.value, node.value)
+    if isEmberComputed(node.value)
+      new ComputedProperty(propName, node.value)
+    else if isPropertyExtension(node)
+      new ComputedProperty(propName, node.value)
 
-module.exports = { createPropertyFromNode }
+module.exports = { computedPropertyFromNode }
