@@ -13,7 +13,7 @@ describe "integration", ->
     """
 
     errors = coffeelint.lint(missingProp, config)
-    assert(errors.length == 1, "it produces 1 error")
+    assert.equal(errors.length, 1, "it produces 1 error")
     assert.equal(errors[0].meta, "unusedKey", "it has the correct meta")
 
   it "reports errors for @get() call lacking corresponding keys", ->
@@ -24,7 +24,7 @@ describe "integration", ->
     """
 
     errors = coffeelint.lint(missingProp, config)
-    assert(errors.length == 1, "it produces 1 error")
+    assert.equal(errors.length, 1, "it produces 1 error")
     assert.equal(errors[0].meta, "needsKey", "it has the correct meta")
 
   it "works for Em.computed", ->
@@ -35,7 +35,7 @@ describe "integration", ->
     """
 
     errors = coffeelint.lint(missingProp, config)
-    assert(errors.length == 1, "it produces 1 error")
+    assert.equal(errors.length, 1, "it produces 1 error")
     assert.equal(errors[0].meta, "unusedKey", "it has the correct meta")
 
   it "works for property extensions", ->
@@ -47,8 +47,49 @@ describe "integration", ->
     """
 
     errors = coffeelint.lint(missingProp, config)
-    assert(errors.length == 1, "it produces 1 error")
+    assert.equal(errors.length, 1, "it produces 1 error")
     assert.equal(errors[0].meta, "unusedKey", "it has the correct meta")
+
+  it "works with double-quoted keys too", ->
+    missingProp = """
+    Ember.Object.create
+      prop1: Em.computed "dep1", "dep2", ->
+        @get('dep1')
+    """
+
+    errors = coffeelint.lint(missingProp, config)
+    assert.equal(errors.length, 1, "it produces 1 error")
+    assert.equal(errors[0].meta, "unusedKey", "it has the correct meta")
+
+  it "dependent keys that are not string literals are ignored", ->
+    missingProp = """
+    Ember.Object.create
+      prop1: Em.computed "dep1", someVariable, ->
+        @get("dep1")
+    """
+
+    errors = coffeelint.lint(missingProp, config)
+    assert.equal(errors.length, 0)
+
+  it "@get() calls that are made with a variable are ignored", ->
+    missingProp = """
+    Ember.Object.create
+      prop1: Em.computed "dep1", ->
+        @get("dep1") + @get(anotherVariable)
+    """
+
+    errors = coffeelint.lint(missingProp, config)
+    assert.equal(errors.length, 0)
+
+  it "multiple @get() calls that use the same key are ignored", ->
+    missingProp = """
+    Ember.Object.create
+      prop1: Em.computed "dep1", ->
+        @get("dep1") + @get("dep1")
+    """
+
+    errors = coffeelint.lint(missingProp, config)
+    assert.equal(errors.length, 0)
 
   describe "Array Properties", ->
     it "dependent key 'foo.[]' needs a call to @get('foo*') in the body"
