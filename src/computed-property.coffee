@@ -1,7 +1,11 @@
 _ = require 'underscore'
 { nodeType, propMatches } = require './util'
 
-propString = (node) -> node.base.value.replace(/['"]/g,"")
+quoteRegex = /['"]/g
+propString = (node) ->
+  value = node.base.value
+  if value.match(quoteRegex)
+    value.replace(quoteRegex,"")
 
 isGet = (node) ->
   nodeType(node) == "Call" and
@@ -33,7 +37,6 @@ class ComputedProperty
     @propertyGets = []
 
     @findGets(fnBlock.body)
-
     @extraKeys = @keyDiff(@dependentKeys, @propertyGets)
     @missingKeys = @keyDiff(@propertyGets, @dependentKeys)
 
