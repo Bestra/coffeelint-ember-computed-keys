@@ -4,7 +4,8 @@
   "description": "Check missing/extra dependent keys on computed properties",
   "main": "index.js",
   "scripts": {
-    "test": "mocha -w --compilers coffee:coffee-script/register"
+    "test": "mocha",
+    "test-watch": "mocha -w"
   },
   "repository": {
     "type": "git",

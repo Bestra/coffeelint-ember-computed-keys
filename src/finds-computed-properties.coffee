@@ -14,9 +14,12 @@ computedPropertyFromNode = (node) ->
   nodeType(node) == "Assign"
     propName = node.variable.base.value
 
-    if isEmberComputed(node.value)
-      new ComputedProperty(propName, node.value)
-    else if isPropertyExtension(node)
-      new ComputedProperty(propName, node.value)
+    propNode = node.value
+
+    if isEmberComputed(propNode)
+      [argNodes..., fnNode] = propNode.args
+      new ComputedProperty(propName, argNodes, fnNode)
+    else if isPropertyExtension(propNode)
+      new ComputedProperty(propName, propNode.args, propNode.variable.base)
 
 module.exports = { computedPropertyFromNode }

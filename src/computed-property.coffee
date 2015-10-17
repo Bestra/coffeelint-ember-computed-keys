@@ -25,21 +25,16 @@ class ComputedProperty
     _.reject bigSet, (b) ->
       _.find(smallSet, (s) -> s.key == b.key)
 
-  constructor: (@propertyName, @rootNode) ->
-    [dependentKeyNodes..., fnNode] = @rootNode.args
-
-    @dependentKeys = dependentKeyNodes.map (keyNode) ->
+  constructor: (@propertyName, argNodes, fnBlock) ->
+    @dependentKeys = argNodes.map (keyNode) ->
       key: propString(keyNode)
       lineNumber: keyNode.locationData.first_line + 1
 
     @propertyGets = []
 
-    @findGets(fnNode.body)
+    @findGets(fnBlock.body)
 
     @extraKeys = @keyDiff(@dependentKeys, @propertyGets)
     @missingKeys = @keyDiff(@propertyGets, @dependentKeys)
-
-    console.log "extra keys: #{@extraKeys}"
-    console.log "missing keys: #{@missingKeys}"
 
 module.exports = ComputedProperty

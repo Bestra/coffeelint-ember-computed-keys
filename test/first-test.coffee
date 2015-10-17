@@ -4,7 +4,7 @@ plugin = require('../index')
 coffeelint.registerRule(plugin)
 config = {}
 
-describe "tldr tests", ->
+describe "integration", ->
   it "reports errors for unused keys", ->
     missingProp = """
     Ember.Object.create
@@ -15,6 +15,17 @@ describe "tldr tests", ->
     errors = coffeelint.lint(missingProp, config)
     assert(errors.length == 1, "it produces 1 error")
     assert.equal(errors[0].meta, "unusedKey", "it has the correct meta")
+
+  it "reports errors for @get() call lacking corresponding keys", ->
+    missingProp = """
+    Ember.Object.create
+      prop1: Ember.computed 'dep1', ->
+        @get('dep1') + @get('dep2')
+    """
+
+    errors = coffeelint.lint(missingProp, config)
+    assert(errors.length == 1, "it produces 1 error")
+    assert.equal(errors[0].meta, "needsKey", "it has the correct meta")
 
   it "works for Em.computed", ->
     missingProp = """
@@ -27,7 +38,7 @@ describe "tldr tests", ->
     assert(errors.length == 1, "it produces 1 error")
     assert.equal(errors[0].meta, "unusedKey", "it has the correct meta")
 
-  it.only "works for property extensions", ->
+  it "works for property extensions", ->
     missingProp = """
     Ember.Object.create
       prop1: ( ->
@@ -39,24 +50,8 @@ describe "tldr tests", ->
     assert(errors.length == 1, "it produces 1 error")
     assert.equal(errors[0].meta, "unusedKey", "it has the correct meta")
 
-  it "reports errors for @get() call lacking corresponding keys", ->
-    missingProp = """
-    Ember.Object.create
-      prop1: Ember.computed 'dep1', ->
-        @get('dep1') + @get('dep2')
-    """
-
-    errors = coffeelint.lint(missingProp, config)
-    assert(errors.length == 1, "it produces 1 error")
-    assert.equal(errors[0].meta, "needsKey", "it has the correct meta")
-
-  it "reports errors for @get() call lacking corresponding keys", ->
-    missingProp = """
-    Ember.Object.create
-      prop1: Ember.computed 'dep1', ->
-        @get('dep1') + @get('dep2')
-    """
-
-    errors = coffeelint.lint(missingProp, config)
-    assert(errors.length == 1, "it produces 1 error")
-    assert.equal(errors[0].meta, "needsKey", "it has the correct meta")
+  describe "Array Properties", ->
+    it "dependent key 'foo.[]' needs a call to @get('foo*') in the body"
+    it "dependent key 'foo.@each.*' needs @get('foo*') in the body"
+  describe "Bracket expansion", ->
+    it "dependent key 'foo.{bar,baz}' needs @get('foo.bar') and @get('foo.baz') in the body"
