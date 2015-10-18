@@ -2,9 +2,11 @@ _ = require 'underscore'
 { nodeType, propMatches } = require './util'
 
 quoteRegex = /['"]/g
+isSimpleProp = /^['"].+['"]$/
+
 propString = (node) ->
   value = node.base.value
-  if value.match(quoteRegex)
+  if value.match(isSimpleProp)
     value.replace(quoteRegex,"")
 
 isGet = (node) ->
@@ -16,9 +18,8 @@ keyDiff = (bigSet, smallSet) ->
   _.reject bigSet, (b) ->
     _.find(smallSet, (s) -> s.key == b.key)
 
-removeEmptyKeys = (arr) ->
-  _.reject(arr, (item) -> !item.key)
-
+lineNumber = (node) ->
+  node.locationData.first_line + 1
 class ComputedProperty
   rootNode: null
   propertyName: null
@@ -26,22 +27,23 @@ class ComputedProperty
   propertyGets: null
 
   findGets: (blockNode) ->
+    accum = []
     blockNode.traverseChildren true, (childNode) =>
       if isGet(childNode)
-        @propertyGets.push
+        accum.push
           key: propString(childNode.args[0])
-          lineNumber: childNode.locationData.first_line + 1
+          lineNumber: lineNumber(childNode)
+    _.filter(accum, 'key')
 
+  findDependentKeys: (argNodes) ->
+    keys = argNodes.map (keyNode) ->
+      key: propString(keyNode)
+      lineNumber: lineNumber(keyNode)
+    _.filter(keys, 'key')
 
   constructor: (@propertyName, argNodes, fnBlock) ->
-    @dependentKeys = argNodes.map (keyNode) ->
-      key: propString(keyNode)
-      lineNumber: keyNode.locationData.first_line + 1
-
-    @propertyGets = []
-    @findGets(fnBlock.body)
-    @dependentKeys = removeEmptyKeys(@dependentKeys)
-    @propertyGets = removeEmptyKeys(@propertyGets)
+    @dependentKeys = @findDependentKeys(argNodes)
+    @propertyGets = @findGets(fnBlock.body)
     @extraKeys = keyDiff(@dependentKeys, @propertyGets)
     @missingKeys = keyDiff(@propertyGets, @dependentKeys)
 
