@@ -12,6 +12,13 @@ isGet = (node) ->
   node.variable.this == true and
   propMatches(node, 0, "get")
 
+keyDiff = (bigSet, smallSet) ->
+  _.reject bigSet, (b) ->
+    _.find(smallSet, (s) -> s.key == b.key)
+
+removeEmptyKeys = (arr) ->
+  _.reject(arr, (item) -> !item.key)
+
 class ComputedProperty
   rootNode: null
   propertyName: null
@@ -25,9 +32,6 @@ class ComputedProperty
           key: propString(childNode.args[0])
           lineNumber: childNode.locationData.first_line + 1
 
-  keyDiff: (bigSet, smallSet) ->
-    _.reject bigSet, (b) ->
-      _.find(smallSet, (s) -> s.key == b.key)
 
   constructor: (@propertyName, argNodes, fnBlock) ->
     @dependentKeys = argNodes.map (keyNode) ->
@@ -35,9 +39,10 @@ class ComputedProperty
       lineNumber: keyNode.locationData.first_line + 1
 
     @propertyGets = []
-
     @findGets(fnBlock.body)
-    @extraKeys = @keyDiff(@dependentKeys, @propertyGets)
-    @missingKeys = @keyDiff(@propertyGets, @dependentKeys)
+    @dependentKeys = removeEmptyKeys(@dependentKeys)
+    @propertyGets = removeEmptyKeys(@propertyGets)
+    @extraKeys = keyDiff(@dependentKeys, @propertyGets)
+    @missingKeys = keyDiff(@propertyGets, @dependentKeys)
 
 module.exports = ComputedProperty
